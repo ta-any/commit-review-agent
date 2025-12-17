@@ -1,0 +1,21 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "ai-code-reviewer"
+version = "0.1.0"
+description = "Telegram AI code reviewer bot triggered by GitHub webhooks"
+dependencies = [
+    "mistralai", 
+    "fastapi",
+    "uvicorn",
+    "pydantic",
+    "python-dotenv",
+    "aiohttp",
+    "httpx",
+    "loguru",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["."]

@@ -1,16 +1,22 @@
+from dotenv import load_dotenv
 import os
+
+load_dotenv()  # ← ЗАГРУЖАЕМ .env до всего остального
+
 import aiohttp
 from fastapi import FastAPI, Request
-from dotenv import load_dotenv
-from github_webhook import handle_github_webhook, verify_signature
+from src.utils.github_webhook import handle_github_webhook, verify_signature, fetch_file_contents
+from src.utils.mistral_client import get_long_completion
 from loguru import logger
 
-logger.add("webhook_debug.log", rotation="10 MB")  # ← ФАЙЛ ЛОГОВ!
-
-load_dotenv()
+logger.add("webhook_debug.log", rotation="10 MB")  
 app = FastAPI(title="AI Code Reviewer Bot")
 
 GITHUB_WEBHOOK_SECRET = os.getenv("GITHUB_WEBHOOK_SECRET").encode("utf-8")
+GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
+bot_token = os.getenv("TELEGRAM_BOT_TOKEN")
+chat_id = os.getenv("TELEGRAM_CHAT_ID")
+
 
 async def send_telegram_message(bot_token: str, chat_id: str, message: str) -> bool:
     """
@@ -54,8 +60,6 @@ async def send_telegram_message(bot_token: str, chat_id: str, message: str) -> b
 # Пример использования в FastAPI:
 async def notify_telegram_review(repo_name: str, commit_id: str, files_count: int):
     """Уведомление о запуске code review."""
-    bot_token = os.getenv("TELEGRAM_BOT_TOKEN")
-    chat_id = os.getenv("TELEGRAM_CHAT_ID")
     
     if not bot_token or not chat_id:
         print("⚠️ Telegram credentials не настроены")
@@ -76,15 +80,32 @@ async def notify_telegram_review(repo_name: str, commit_id: str, files_count: in
 # Интеграция в ваш webhook (добавьте в handle_github_webhook):
 @app.post("/")
 async def root_webhook(request: Request):
-    data_result = await handle_github_webhook(request, GITHUB_WEBHOOK_SECRET)
-    success = await notify_telegram_review(
-        repo_name=data_result['repo'],
-        commit_id=data_result['commit'],
-        files_count=data_result['files']
-    )
-    if success:
-        logger.success("📱 Telegram уведомление отправлено!")
-    return
+    try:
+        data_result = await handle_github_webhook(request, GITHUB_WEBHOOK_SECRET, GITHUB_TOKEN)
+        if data_result.get("status") == "review_queued":
+            success = await notify_telegram_review(
+                repo_name=data_result['repo'],
+                commit_id=data_result['commit'],
+                files_count=data_result['files']
+            )
+            if success:
+                logger.success("📱 Telegram уведомление отправлено!")
+            
+            code = data_result.get("contents")
+            logger.info(f"Code from gitHub {code}")
+            
+            if code is None:
+                code = "<FAILED TO FETCH FILE CONTENTS>"
+
+            prompt = f"Проанализируй следующий код:\n\n{code}" 
+
+            review = await get_long_completion(prompt)
+            return await send_telegram_message(bot_token, chat_id, review)
+
+        return {"status": "ok"}
+    except Exception as e:
+        logger.exception("💥 Ошибка в webhook обработчике")
+        return {"status": "error", "detail": str(e)}, 500
 
 @app.post("/webhook/github")
 async def github_webhook(request: Request):
