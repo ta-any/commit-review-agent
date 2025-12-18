@@ -3,7 +3,7 @@
 from dotenv import load_dotenv
 import os
 
-load_dotenv()  # ← ЗАГРУЖАЕМ .env до всего остального
+load_dotenv() 
 
 from fastapi import FastAPI, Request
 from src.utils.github_webhook import handle_github_webhook
@@ -29,6 +29,7 @@ async def root_webhook(request: Request):
                 logger.success(f"id_repo: {repo_id} нашлось в памяти")
             else:
                 logger.error(f"❌ Ошибка id_repo в памяти")
+                return {"status": "error", "detail": "Ошибка id_repo в памяти"}
             chat_id = get_chat_id(repo_id);  
 
             success = await notify_telegram_review(

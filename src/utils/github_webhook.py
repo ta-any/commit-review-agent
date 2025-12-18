@@ -2,7 +2,7 @@ import base64
 import hashlib
 import hmac
 import json
-from typing import Dict, Any, List
+from typing import Dict, List
 from fastapi import Request, Response, status
 from loguru import logger
 import httpx

@@ -2,7 +2,7 @@
 
 import json
 from pathlib import Path
-from typing import Optional, Dict, Any
+from typing import Optional, Dict
 from loguru import logger
 
 # Путь к JSON-файлу относительно этого файла (utils/)

@@ -12,7 +12,7 @@ async def send_telegram_message(bot_token: str, chat_id: str, message: str) -> b
     Асинхронно отправляет сообщение в Telegram бот.
     
     Args:
-        bot_token: Токен бота от @BotFather
+        bot_token: Токен бота
         chat_id: ID чата (пользователя/группы/канала)
         message: Текст сообщения
     
@@ -56,14 +56,14 @@ async def notify_telegram_review(chat_id: str, repo_name: str, commit_id: str, f
         return False
     
     message = f"""
-🚀 <b>Code Review запущен!</b>
+    🚀 <b>Code Review запущен!</b>
 
-📂 Репозиторий: <b>{repo_name}</b>
-💾 Коммит: <code>{commit_id}</code>
-📄 Файлов для анализа: <b>{files_count}</b>
+    📂 Репозиторий: <b>{repo_name}</b>
+    💾 Коммит: <code>{commit_id}</code>
+    📄 Файлов для анализа: <b>{files_count}</b>
 
-⏳ Анализ запущен...
-    """.strip()
+    ⏳ Анализ запущен...
+        """.strip()
     
     return await send_telegram_message(bot_token, chat_id, message)
 
