@@ -8,7 +8,7 @@ load_dotenv()
 from fastapi import FastAPI, Request
 from src.utils.github_webhook import handle_github_webhook
 from src.utils.mistral_client import get_long_completion
-from src.utils.telegram_notifier import notify_telegram_review, send_code_review
+from utils.chat_notifier import notify_telegram_review, send_code_review
 from src.utils.repo_chat_map import is_repo_id_registered, get_chat_id
 from loguru import logger
 
