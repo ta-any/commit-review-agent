@@ -11,7 +11,7 @@ from urllib.parse import quote
 GITHUB_API_BASE = "https://api.github.com"
 
 def _parse_signature(signature_header: str) -> tuple[str, str] | None:
-    """Разбор подписи (принцип 4, <20 строк)."""
+    """Разбор подписи """
     if not signature_header.startswith("sha256="):
         logger.debug("📋 Подпись не начинается с 'sha256='")
         return None
@@ -24,7 +24,7 @@ def _parse_signature(signature_header: str) -> tuple[str, str] | None:
         return None
 
 def verify_signature(payload_body: bytes, signature_header: str, secret: bytes) -> bool:
-    """Проверяет подпись (1 выход, 40 строк)."""
+    """Проверяет подпись """
     logger.info("🔍 Начинаем проверку подписи GitHub webhook")
     parts = _parse_signature(signature_header)
     if not parts or parts[0] != "sha256":
@@ -42,7 +42,7 @@ def verify_signature(payload_body: bytes, signature_header: str, secret: bytes) 
 
 async def _get_repo_info(client: httpx.AsyncClient, headers: Dict[str, str], 
                         owner: str, repo: str) -> tuple[str, str] | None:
-    """Валидация repo+commit → repo_url, error_msg (принцип 4)."""
+    """Валидация repo+commit → repo_url, error_msg """
     logger.debug(f"🌐 Запрашиваем метаданные репозитория: {owner}/{repo}")
     repo_url = f"{GITHUB_API_BASE}/repos/{owner}/{repo}"
     
@@ -57,7 +57,7 @@ async def _get_repo_info(client: httpx.AsyncClient, headers: Dict[str, str],
 
 async def _fetch_one_file(client: httpx.AsyncClient, headers: Dict[str, str], 
                          repo_url: str, file_path: str, commit_sha: str) -> str:
-    """Один файл → один блок (принцип 5, 1 выход)."""
+    """Один файл → один блок """
     url = f"{repo_url}/contents/{quote(file_path)}?ref={commit_sha}"
     logger.debug(f"📥 Запрашиваем файл: {file_path} @ {commit_sha[:7]}")
     
@@ -77,7 +77,6 @@ async def _fetch_one_file(client: httpx.AsyncClient, headers: Dict[str, str],
 
 async def fetch_file_contents(owner: str, repo: str, commit_sha: str, 
                              file_paths: List[str], github_token: str) -> str:
-    """Главная (35 строк, вложенность=3)."""
     logger.info(f"📂 Запрошено содержимое {len(file_paths)} файлов из {owner}/{repo}@{commit_sha[:7]}")
     if not file_paths:
         logger.warning("📭 Список файлов пуст — возвращаем пустую строку")
@@ -103,7 +102,7 @@ async def fetch_file_contents(owner: str, repo: str, commit_sha: str,
     return "\n".join(all_content)
 
 async def handle_github_webhook(request: Request, secret: bytes, token: str) -> Response | Dict:
-    """Главная webhook (45 строк)."""
+    """Главная webhook """
     logger.info("🚀 Получен GitHub webhook")
     
     payload = await request.body()
@@ -127,6 +126,9 @@ async def handle_github_webhook(request: Request, secret: bytes, token: str) -> 
         logger.info("⏭️ Игнорируем: событие не 'push'")
         return {"status": "ignored"}
     
+    repo_id = event["repository"]["id"]
+    logger.info(f"Вебхук от репозитория: (ID: {repo_id})")
+
     # Собираем файлы из всех коммитов
     files = set()
     commits = event.get("commits", [])
@@ -153,5 +155,6 @@ async def handle_github_webhook(request: Request, secret: bytes, token: str) -> 
         "repo": event["repository"]["full_name"],
         "commit": event["after"][:7],
         "files": len(files),
-        "contents": contents
+        "contents": contents,
+        "repo_id": repo_id
     }

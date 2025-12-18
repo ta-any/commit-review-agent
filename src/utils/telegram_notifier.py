@@ -6,7 +6,6 @@ import os
 
 # Загружаем переменные из окружения (на случай, если файл используется отдельно)
 bot_token = os.getenv("TELEGRAM_BOT_TOKEN")
-chat_id = os.getenv("TELEGRAM_CHAT_ID")
 
 async def send_telegram_message(bot_token: str, chat_id: str, message: str) -> bool:
     """
@@ -49,7 +48,7 @@ async def send_telegram_message(bot_token: str, chat_id: str, message: str) -> b
         return False
 
 
-async def notify_telegram_review(repo_name: str, commit_id: str, files_count: int) -> bool:
+async def notify_telegram_review(chat_id: str, repo_name: str, commit_id: str, files_count: int) -> bool:
     """Уведомление о запуске code review."""
     
     if not bot_token or not chat_id:
@@ -69,7 +68,7 @@ async def notify_telegram_review(repo_name: str, commit_id: str, files_count: in
     return await send_telegram_message(bot_token, chat_id, message)
 
 
-async def send_code_review(review_text: str) -> bool:
+async def send_code_review(review_text: str, chat_id: str,) -> bool:
     """Отправляет результат ревью кода в Telegram."""
     if not bot_token or not chat_id:
         logger.warning("⚠️ Telegram credentials не настроены — пропускаем отправку ревью")
